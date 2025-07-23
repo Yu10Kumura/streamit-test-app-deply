@@ -11,14 +11,27 @@ except ImportError:
     pass
 
 # LangChainの基本的な部品
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-
-# LangChainでOpenAIのモデルを使うための部品
-from langchain_openai import ChatOpenAI
+try:
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.output_parsers import StrOutputParser
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    # 旧バージョンのLangChainを試す
+    try:
+        from langchain.prompts import ChatPromptTemplate
+        from langchain.schema.output_parser import StrOutputParser
+        from langchain.chat_models import ChatOpenAI
+    except ImportError:
+        st.error("LangChainのインポートに失敗しました。requirements.txtを確認してください。")
+        st.stop()
 
 # LLMの初期化
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+try:
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+except Exception as e:
+    st.error(f"OpenAI APIの初期化に失敗しました: {e}")
+    st.info("OpenAI APIキーがAdvanced settingsで正しく設定されているか確認してください。")
+    st.stop()
 
 # LLMに質問して回答を得る関数
 def get_ai_response(input_text: str, mode: str) -> str:
