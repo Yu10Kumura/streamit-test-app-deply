@@ -2,35 +2,30 @@ import os
 import streamlit as st
 import random
 
-# .envファイルから環境変数を読み込み（ローカル開発用）
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    # Streamlit Cloudでは dotenv は不要
-    pass
+# OpenAI APIキーの確認
+if "OPENAI_API_KEY" not in os.environ:
+    st.error("OpenAI APIキーが設定されていません。Advanced settingsで設定してください。")
+    st.stop()
 
-# LangChainの基本的な部品
+# LangChainのインポート
 try:
+    from langchain_openai import ChatOpenAI
     from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.output_parsers import StrOutputParser
-    from langchain_openai import ChatOpenAI
-except ImportError:
-    # 旧バージョンのLangChainを試す
-    try:
-        from langchain.prompts import ChatPromptTemplate
-        from langchain.schema.output_parser import StrOutputParser
-        from langchain.chat_models import ChatOpenAI
-    except ImportError:
-        st.error("LangChainのインポートに失敗しました。requirements.txtを確認してください。")
-        st.stop()
+except ImportError as e:
+    st.error(f"LangChainのインポートエラー: {e}")
+    st.info("requirements.txtを確認してください。")
+    st.stop()
 
-# LLMの初期化
+# OpenAI クライアントの初期化
 try:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo", 
+        temperature=0,
+        openai_api_key=os.environ.get("OPENAI_API_KEY")
+    )
 except Exception as e:
-    st.error(f"OpenAI APIの初期化に失敗しました: {e}")
-    st.info("OpenAI APIキーがAdvanced settingsで正しく設定されているか確認してください。")
+    st.error(f"OpenAI APIの初期化エラー: {e}")
     st.stop()
 
 # LLMに質問して回答を得る関数
