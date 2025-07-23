@@ -7,68 +7,58 @@ if "OPENAI_API_KEY" not in os.environ:
     st.error("OpenAI APIキーが設定されていません。Advanced settingsで設定してください。")
     st.stop()
 
-# LangChainのインポート
+# OpenAIのインポート
 try:
-    from langchain_openai import ChatOpenAI
-    from langchain_core.prompts import ChatPromptTemplate
-    from langchain_core.output_parsers import StrOutputParser
+    from openai import OpenAI
 except ImportError as e:
-    st.error(f"LangChainのインポートエラー: {e}")
+    st.error(f"OpenAIのインポートエラー: {e}")
     st.info("requirements.txtを確認してください。")
     st.stop()
 
 # OpenAI クライアントの初期化
 try:
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo", 
-        temperature=0,
-        openai_api_key=os.environ.get("OPENAI_API_KEY")
-    )
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 except Exception as e:
     st.error(f"OpenAI APIの初期化エラー: {e}")
     st.stop()
 
-# LLMに質問して回答を得る関数
+# AIに質問して回答を得る関数
 def get_ai_response(input_text: str, mode: str) -> str:
     """
-    入力テキストとモード（選択値）を受け取り、LLMからの回答を返す関数
+    入力テキストとモード（選択値）を受け取り、OpenAI APIからの回答を返す関数
     
     Args:
         input_text (str): ユーザーの入力テキスト
         mode (str): 選択されたモード（"BMI計算" or "今日の運勢占い"）
     
     Returns:
-        str: LLMからの回答
+        str: OpenAI APIからの回答
     """
     if mode == "BMI計算":
-        # BMI計算の専門家としてのプロンプト
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """あなたは経験豊富な健康・栄養の専門家です。BMIや体重管理、健康的な生活習慣について専門的な知識を持っています。
-            ユーザーから体重と身長の情報、またはBMIに関する質問を受け取ります。
-            科学的根拠に基づいた実践的なアドバイスを提供してください。
-            医学的な診断は行わず、一般的な健康情報として回答してください。"""),
-            ("human", "{input}")
-        ])
+        system_message = """あなたは経験豊富な健康・栄養の専門家です。BMIや体重管理、健康的な生活習慣について専門的な知識を持っています。
+        ユーザーから体重と身長の情報、またはBMIに関する質問を受け取ります。
+        科学的根拠に基づいた実践的なアドバイスを提供してください。
+        医学的な診断は行わず、一般的な健康情報として回答してください。"""
     elif mode == "今日の運勢占い":
-        # 占い師としてのプロンプト
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """あなたは経験豊富で知識豊富な占い師です。星座占いや運勢について深い知識を持っています。
-            ユーザーから星座の情報や運勢に関する質問を受け取ります。
-            神秘的で希望に満ちた、でも実用的なアドバイスを提供してください。
-            占いの雰囲気を大切にしながら、前向きで建設的な回答をしてください。"""),
-            ("human", "{input}")
-        ])
+        system_message = """あなたは経験豊富で知識豊富な占い師です。星座占いや運勢について深い知識を持っています。
+        ユーザーから星座の情報や運勢に関する質問を受け取ります。
+        神秘的で希望に満ちた、でも実用的なアドバイスを提供してください。
+        占いの雰囲気を大切にしながら、前向きで建設的な回答をしてください。"""
     else:
-        # デフォルトの汎用プロンプト
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "あなたは親切なAIアシスタントです。質問に丁寧に答えてください。"),
-            ("human", "{input}")
-        ])
+        system_message = "あなたは親切なAIアシスタントです。質問に丁寧に答えてください。"
     
-    # チェインを作成して実行
-    chain = prompt | llm | StrOutputParser()
-    response = chain.invoke({"input": input_text})
-    return response
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": input_text}
+            ],
+            temperature=0
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"OpenAI API呼び出しエラー: {e}")
 # --- Streamlit UIの構築 ---
 st.header("体重診断と今日の運勢のAIアシスタント")
 st.write("診断後、フォローアップの質問が可能です")
