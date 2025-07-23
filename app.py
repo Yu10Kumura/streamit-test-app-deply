@@ -1,10 +1,14 @@
 import os
 import streamlit as st
 import random
-from dotenv import load_dotenv
 
-# .envファイルから環境変数を読み込み
-load_dotenv()
+# .envファイルから環境変数を読み込み（ローカル開発用）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # Streamlit Cloudでは dotenv は不要
+    pass
 
 # LangChainの基本的な部品
 from langchain_core.prompts import ChatPromptTemplate
