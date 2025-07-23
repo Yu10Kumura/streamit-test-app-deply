@@ -3,6 +3,11 @@ attrs==25.3.0
 blinker==1.9.0
 cachetools==5.5.2
 certifi==2025.7.14
+langchain==0.3.7
+langchain-core==0.3.15
+langchain-openai==0.2.8
+openai==1.57.2
+python-dotenv==1.0.1
 charset-normalizer==3.4.2
 click==8.2.1
 gitdb==4.0.12
